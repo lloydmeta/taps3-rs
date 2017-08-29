@@ -15,7 +15,6 @@ build: download-certs
 		--build-arg CA_CERT=ca-certificates.crt \
 		--build-arg VCS_REF=$(VCS_REF) \
 		--build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
-		--build-arg IMAGE_VERSION=$(IMAGE_VERSION) \
 		-t $(GIT_TAG) .
 
 download-certs:

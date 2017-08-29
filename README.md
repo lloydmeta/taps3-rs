@@ -30,5 +30,5 @@ OPTIONS:
 
 `taps3` is compiled as a statically-linked library via [`rust-musl-builder`](https://github.com/emk/rust-musl-builder)
 and the CA certificates are downloaded from [curl](https://curl.haxx.se/docs/caextract.html) and added
-separately to the Docker Image.
+separately to the Alpine-based Docker Image.
 
