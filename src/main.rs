@@ -2,6 +2,7 @@ extern crate rusoto_core;
 extern crate rusoto_s3;
 extern crate chrono;
 extern crate clap;
+extern crate openssl_probe;
 
 use std::error::Error;
 use std::process::exit;
@@ -16,6 +17,7 @@ use clap::{App, Arg};
 
 const BUCKET_KEY: &'static str = "bucket";
 const FILE_KEY: &'static str = "file";
+const REGION_KEY: &'static str = "region";
 
 fn main() {
     match inner_main() {
@@ -28,6 +30,7 @@ fn main() {
 }
 
 fn inner_main() -> Result<(), Box<Error>> {
+    openssl_probe::init_ssl_cert_env_vars();
     let version = version();
     let app = App::new("taps3")
         .version(version.as_str())
@@ -43,9 +46,20 @@ fn inner_main() -> Result<(), Box<Error>> {
                 .takes_value(true)
                 .number_of_values(1)
                 .required(true)
-                .validator(|s| non_empty_string_validator(&s, BUCKET_KEY))
+                .validator(non_empty_string_validator)
                 .help(
                     "The name of the bucket that you want to write your tap file to.",
+                ),
+        )        .arg(
+            Arg::with_name(REGION_KEY)
+                .short("R")
+                .long(REGION_KEY)
+                .takes_value(true)
+                .number_of_values(1)
+                .required(true)
+                .validator(non_empty_string_validator)
+                .help(
+                    "The region of the bucket that you want to write your tap file to.",
                 ),
         )
         .arg(
@@ -56,18 +70,19 @@ fn inner_main() -> Result<(), Box<Error>> {
                 .number_of_values(1)
                 .required(false)
                 .default_value("tapped")
-                .validator(|s| non_empty_string_validator(&s, FILE_KEY))
+                .validator(non_empty_string_validator)
                 .help("The name of the file that you want to write to."),
         );
 
     // in case we need to print help
     let mut app_clone = app.clone();
     let matches = app.get_matches();
-    match (matches.value_of(BUCKET_KEY), matches.value_of(FILE_KEY)) {
-        (Some(bucket_raw), Some(file_raw)) => {
+    match (matches.value_of(BUCKET_KEY), matches.value_of(FILE_KEY), matches.value_of(REGION_KEY)) {
+        (Some(bucket_raw), Some(file_raw), Some(region_raw)) => {
             let bucket = bucket_raw.trim();
             let file = file_raw.trim();
-            let write_result = write_time(bucket, file).map(|_| ());
+            let region = region_raw.trim();
+            let write_result = write_time(bucket, file, region).map(|_| ());
             Ok(write_result?)
         }
         _ => Ok(app_clone.print_help()?),
@@ -75,9 +90,10 @@ fn inner_main() -> Result<(), Box<Error>> {
 
 }
 
-fn write_time(bucket_name: &str, file_name: &str) -> Result<PutObjectOutput, Box<Error>> {
+fn write_time(bucket_name: &str, file_name: &str, region_name: &str) -> Result<PutObjectOutput, Box<Error>> {
     let provider = DefaultCredentialsProvider::new()?;
-    let client = S3Client::new(default_tls_client()?, provider, Region::ApNortheast1);
+    let region: Region = region_name.parse()?;
+    let client = S3Client::new(default_tls_client()?, provider, region);
     let utc: DateTime<Utc> = Utc::now();
     let utc_str = format!("{}", utc);
 
@@ -108,9 +124,9 @@ fn version() -> String {
     }
 }
 
-fn non_empty_string_validator(v: &str, key_name: &str) -> Result<(), String> {
+fn non_empty_string_validator(v: String) -> Result<(), String> {
     if v.trim().is_empty() {
-        Err(format!("{} should not be empty", key_name))
+        Err("Should not be empty".into())
     } else {
         Ok(())
     }

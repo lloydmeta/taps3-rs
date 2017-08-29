@@ -10,12 +10,16 @@ GIT_TAG=$(QNAME):$(VCS_REF)
 BUILD_TAG=$(QNAME):$(IMAGE_VERSION)
 LATEST_TAG=$(QNAME):latest
 
-build:
+build: download-certs
 	docker build \
+		--build-arg CA_CERT=ca-certificates.crt \
 		--build-arg VCS_REF=$(VCS_REF) \
 		--build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
 		--build-arg IMAGE_VERSION=$(IMAGE_VERSION) \
 		-t $(GIT_TAG) .
+
+download-certs:
+	curl -o ca-certificates.crt https://curl.haxx.se/ca/cacert.pem
 
 lint:
 	docker run -it --rm -v "$(PWD)/Dockerfile:/Dockerfile:ro" redcoolbeans/dockerlint
