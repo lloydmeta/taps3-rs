@@ -7,6 +7,11 @@ addons:
     packages:
       - docker-ce
 
+before_script:
+  - >
+    echo '{ "experimental": true }' | sudo tee /etc/docker/daemon.json > /dev/null
+  - sudo service docker restart
+
 script:
   - make lint build tag push
 
