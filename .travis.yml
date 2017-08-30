@@ -13,11 +13,13 @@ before_script:
   - sudo service docker restart
 
 script:
-  - 'if [ "${TRAVIS_PULL_REQUEST}" = "false" ] &&  [ ! -z $TRAVIS_TAG ]; then
-       make lint build tag push
+  - >
+    if [ "${TRAVIS_PULL_REQUEST}" = "false" ] &&  [ ! -z "${TRAVIS_TAG}" ]; then
+      make lint build tag push
     else
-       cargo test && make lint build
-    fi'
+      cargo test &&\
+        make lint build
+    fi
 
 env:
   global:
