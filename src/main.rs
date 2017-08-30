@@ -46,18 +46,21 @@ fn inner_main() -> Result<(), Box<Error>> {
                 .takes_value(true)
                 .number_of_values(1)
                 .required(true)
-                .validator(non_empty_string_validator)
+                .validator(|s| non_empty_string_validator(&s))
                 .help(
                     "The name of the bucket that you want to write your tap file to.",
                 ),
-        )        .arg(
+        )
+        .arg(
             Arg::with_name(REGION_KEY)
                 .short("R")
                 .long(REGION_KEY)
                 .takes_value(true)
                 .number_of_values(1)
                 .required(true)
-                .validator(non_empty_string_validator)
+                .validator(|s| {
+                    non_empty_string_validator(&s).and_then(|_| valid_region(&s))
+                })
                 .help(
                     "The region of the bucket that you want to write your tap file to.",
                 ),
@@ -70,18 +73,22 @@ fn inner_main() -> Result<(), Box<Error>> {
                 .number_of_values(1)
                 .required(false)
                 .default_value("tapped")
-                .validator(non_empty_string_validator)
+                .validator(|s| non_empty_string_validator(&s))
                 .help("The name of the file that you want to write to."),
         );
 
     // in case we need to print help
     let mut app_clone = app.clone();
     let matches = app.get_matches();
-    match (matches.value_of(BUCKET_KEY), matches.value_of(FILE_KEY), matches.value_of(REGION_KEY)) {
+    match (
+        matches.value_of(BUCKET_KEY),
+        matches.value_of(FILE_KEY),
+        matches.value_of(REGION_KEY),
+    ) {
         (Some(bucket_raw), Some(file_raw), Some(region_raw)) => {
             let bucket = bucket_raw.trim();
             let file = file_raw.trim();
-            let region = region_raw.trim();
+            let region: Region = region_raw.trim().parse()?;
             let write_result = write_time(bucket, file, region).map(|_| ());
             Ok(write_result?)
         }
@@ -90,9 +97,12 @@ fn inner_main() -> Result<(), Box<Error>> {
 
 }
 
-fn write_time(bucket_name: &str, file_name: &str, region_name: &str) -> Result<PutObjectOutput, Box<Error>> {
+fn write_time(
+    bucket_name: &str,
+    file_name: &str,
+    region: Region,
+) -> Result<PutObjectOutput, Box<Error>> {
     let provider = DefaultCredentialsProvider::new()?;
-    let region: Region = region_name.parse()?;
     let client = S3Client::new(default_tls_client()?, provider, region);
     let utc: DateTime<Utc> = Utc::now();
     let utc_str = format!("{}", utc);
@@ -124,10 +134,17 @@ fn version() -> String {
     }
 }
 
-fn non_empty_string_validator(v: String) -> Result<(), String> {
+fn non_empty_string_validator(v: &str) -> Result<(), String> {
     if v.trim().is_empty() {
         Err("Should not be empty".into())
     } else {
         Ok(())
+    }
+}
+
+fn valid_region(v: &str) -> Result<(), String> {
+    match v.trim().parse::<Region>() {
+        Ok(_) => Ok(()),
+        Err(e) => Err(format!("{}", e)),
     }
 }
