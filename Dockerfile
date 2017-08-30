@@ -15,7 +15,7 @@ ARG CA_CERT
 ARG BUILD_DATE
 
 LABEL org.label-schema.vcs-ref=$VCS_REF \
-      org.label-schema.vcs-url="https://travis-ci.org/lloydmeta/taps3-rs" \
+      org.label-schema.vcs-url="https://github.com/lloydmeta/taps3-rs" \
       org.label-schema.build-date=$BUILD_DATE
 
 COPY $CA_CERT /etc/ssl/certs/
