@@ -30,4 +30,4 @@ RUN addgroup -S taps3user &&\
 
 USER taps3user
 
-ENTRYPOINT ["/entry.sh"]
+ENTRYPOINT ["/entry.sh", "/taps3"]
