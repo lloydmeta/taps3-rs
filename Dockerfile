@@ -20,12 +20,14 @@ LABEL org.label-schema.vcs-ref=$VCS_REF \
 
 COPY $CA_CERT /etc/ssl/certs/
 COPY --from=builder /home/rust/src/target/x86_64-unknown-linux-musl/release/taps3 /taps3
+COPY entry.sh /entry.sh
 
 RUN addgroup -S taps3user &&\
     adduser -S -g taps3user taps3user &&\
     chown -R taps3user /etc/ssl/certs/ &&\
-    chown taps3user /taps3
+    chown taps3user /taps3 &&\
+    chown taps3user /entry.sh
 
 USER taps3user
 
-ENTRYPOINT ["/taps3"]
+ENTRYPOINT ["/entry.sh"]

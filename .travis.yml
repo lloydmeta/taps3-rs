@@ -15,7 +15,7 @@ before_script:
 script:
   - >
     if [ "${TRAVIS_PULL_REQUEST}" = "false" ] &&  [ ! -z "${TRAVIS_TAG}" ]; then
-      make lint build tag push
+      make lint build tag push docker-push-webhooks
     else
       cargo test &&\
         make lint build

@@ -35,3 +35,6 @@ push: login
 	docker push $(GIT_TAG)
 	docker push $(BUILD_TAG)
 	docker push $(LATEST_TAG)
+
+docker-push-webhooks:
+	curl -X https://hooks.microbadger.com/images/lloydmeta/taps3/2eJRdcI8Q5-jicHcJUzJOv87AXE=
